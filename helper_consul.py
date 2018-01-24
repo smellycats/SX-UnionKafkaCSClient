@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import json
 import urllib
 
@@ -11,7 +11,7 @@ class ConsulAPI(object):
         self.port = 8500
         self.headers = {'content-type': 'application/json'}
        
-        self.path = 'union/cs/hcq/'
+        self.path = ''
 
         self.status = False
 
