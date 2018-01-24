@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import time
 import json
 import socket
@@ -12,7 +12,7 @@ from my_yaml import MyYAML
 from my_logger import *
 
 
-debug_logging('/home/logs/error.log')
+debug_logging('/var/logs/error.log')
 logger = logging.getLogger('root')
 
 
@@ -25,18 +25,20 @@ class UploadData(object):
         self.kc = None
         self.uk = None
         self.con = ConsulAPI()
+        self.con.path = dict(self.my_ini['consul'])['path']
 
         self.uuid = None                    # session id
         self.session_time = time.time()     # session生成时间戳
         self.ttl = dict(self.my_ini['consul'])['ttl']               # 生存周期
         self.lock_name = dict(self.my_ini['consul'])['lock_name']   # 锁名
 
-        self.local_ip = socket.gethostbyname(socket.gethostname())  # 本地IP
-
-        self.partitions = (12, 2)       # 分区数
+        self.partitions = (dict(self.my_ini['consul'])['part'], dict(self.my_ini['consul'])['factor'])   # 分区数
         self.item = None
         self.part_list = []
 
+        self.local_ip = socket.gethostbyname(socket.gethostname())  # 本地IP
+
+        self.union_server = dict(self.my_ini['union'])['server_name']
 
     def get_lock(self):
         """获取锁"""
@@ -110,13 +112,12 @@ class UploadData(object):
         if offsets == {}:
             return
         else:
-            print('items={0}'.format(len(items)))
-            logger.info('items={0}'.format(len(items)))
             if len(items) > 0:
                 self.uk.post_kakou(items)                 # 上传数据
             self.kc.c.commit(async=False)
-            print(offsets)
-            logger.info(offsets)
+            info_msg = 'items={0}, offset={1}'.format(len(items), offsets)
+            print(info_msg)
+            logger.info(info_msg)
             return
 
     def main_loop(self):
@@ -127,6 +128,7 @@ class UploadData(object):
                         del self.kc
                         self.kc = None
                     self.item = None
+                    self.part_list = []
                     time.sleep(2)
                     continue
                 if self.kc is None:
@@ -135,7 +137,7 @@ class UploadData(object):
                 if self.uk is not None and self.uk.status:
                     self.upload_data()
                 else:
-                    s = self.get_service('unionUploadServer')
+                    s = self.get_service(self.union_server)
                     if s is None:
                         time.sleep(5)
                         continue
