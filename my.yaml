@@ -5,5 +5,8 @@ kafka:
 consul:
   ttl: 30
   lock_name: union-kafka-cs-hcq
+  path: union/cs/hcq/
+  part: 12
+  factor: 1
 union:
   server_name: unionUploadServer
